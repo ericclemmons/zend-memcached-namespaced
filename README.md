@@ -5,69 +5,49 @@ on their specified "namespace".
 
 ## Usage
 
-This simply adds a `clear` method to `Zend_Cache_Backend_Memcached`:
-
-    public function clear($namespace = null) { ... }
+This simply modifies the `clean` functionality in `Zend_Cache_Backend_Memcached`
+to only clean the current namespace, unless you pass in `Zend_Cache::CLEANING_MODE_ALL`.
 
 ### `application.ini`:
 
-    resources.cachemanager.friends.frontend.name = "Class"
-    resources.cachemanager.friends.frontend.options.cached_entity = "\My\Model\Friends"
-    resources.cachemanager.friends.frontend.options.lifetime = 3600
-    resources.cachemanager.friends.frontend.options.automatic_serialization = true
-    resources.cachemanager.friends.backend.name = "Memcached_Namespaced"
+    resources.cachemanager.posts.frontend.name = "Class"
+    resources.cachemanager.posts.frontend.options.cached_entity = "Posts"
     
-### `My\Model\Friends.php`:
+    ; Because of "sanitization" of backends, we have to use a custom one
+    resources.cachemanager.posts.backend.customBackendNaming = true
+    resources.cachemanager.posts.backend.name = "Zend_Cache_Backend_Memcached_Namespace"
+    
+    ; This backend will be stored with keys like: "posts::$KEY"
+    resources.cachemanager.posts.backend.options.namespace = 'posts'
 
-    class Friends
+### `index.php`
+
+Clone this repo into your `vendors` directory and add it to your include path:
+
+    set_include_path(implode(PATH_SEPARATOR, array(
+        ...
+        realpath(APPLICATION_PATH . '/../vendors/zend-memcached-namespaces'),
+        ...
+    );
+
+### Example
+
+    class Zend_Controller_PostsController extends Zend_Controller_Action
     {
-        
         ...
         
-        public static function findFriendsForUser(User $user)
+        public function addPost()
         {
-            $friends = ... some really long process ...
+            $post = new Post();
+            ...
+            Posts::add($post);
             
-            return $friends;
+            // Clean the posts cache
+            $this->cache->clean();
+            
+            // Clean all data
+            $this->cache->clean(Zend_Cache::CLEANING_MODE_ALL);
         }
-        
-        ...
         
     }
 
-### `UserController.php`
-
-    class Zend_Controller_UserController extends Zend_Controller_Action
-    {
-        
-        protected $friendsCache;
-        
-        public function init()
-        {
-            // Store the friends cache locally for easier access
-            $bootstrap = $this->getInvokeArg('bootstrap');
-            $cacheManager = $bootstrap->getResource('cachemanager');
-            
-            $this->friendsCache = $cacheManager->getCache('friends');
-            
-            ...
-        }
-        
-        public function indexAction()
-        {
-            // Friends list is cached for 1 hour after initial request
-            $this->view->friends = $this->friendsCache->findFriendsForUser($this->view->user);
-        }
-        
-        public function addFriendAction()
-        {
-            ...
-            
-            $this->view->user->addFriend( Friends::findById($id) );
-            
-            // Clear the friends cache so the changes are reflected
-            $this->friendsCache->clear();
-        }
-        
-    }
-    
