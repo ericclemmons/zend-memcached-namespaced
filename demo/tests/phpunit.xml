@@ -1,0 +1,16 @@
+<phpunit bootstrap="./TestHelper.php"
+         verbose="true"
+         colors="true"
+         convertErrorsToExceptions="true"
+         convertNoticesToExceptions="true"
+         convertWarningsToExceptions="true">
+    <testsuite name="Zend_Cache_Backend_Memcached_Namespace Test Suite">
+        <directory>./</directory>
+    </testsuite>
+    
+    <filter>
+        <whitelist>
+            <directory suffix=".php">./library</directory>
+        </whitelist>
+    </filter>
+</phpunit>
