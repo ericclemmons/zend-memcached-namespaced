@@ -1,4 +1,4 @@
-# Zend_Cache_Backend_Memcached_Namespaces
+# Zend_Cache_Backend_Memcached_Namespace
 
 Extends `Zend_Cache_Backend_Memcached` to allow for clearing of specific variables based
 on their specified "namespace".
@@ -26,7 +26,7 @@ Clone this repo into your `vendors` directory and add it to your include path:
 
     set_include_path(implode(PATH_SEPARATOR, array(
         ...
-        realpath(APPLICATION_PATH . '/../vendors/zend-memcached-namespaces'),
+        realpath(APPLICATION_PATH . '/../vendors/zend-memcached-namespaced'),
         ...
     );
 
