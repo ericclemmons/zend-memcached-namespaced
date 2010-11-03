@@ -30,70 +30,6 @@ class Zend_Cache_Backend_Memcached_Namespace extends Zend_Cache_Backend_Memcache
     protected $_trackingId = '__keys';
     
     /**
-     * Append specified ID to list of tracked IDs
-     *
-     * @var string ID
-     * @return boolean True if success
-     */
-    protected function _trackId($id)
-    {
-        $ids = $this->getTrackedIds();
-        $ids[] = $id;
-        
-        return parent::save($ids, $this->getNamespacedTrackingId());
-    }
-    
-    /**
-     * @return string Tracking ID specific to current namespace
-     */
-    public function getNamespacedTrackingId()
-    {
-        // Allow for a string or array of namespaces
-        $namespaces = (Array) $this->_options['namespace'];
-        
-        // Append the default tracking ID
-        $namespaces[] = $this->_trackingId;
-        
-        $delimiter = $this->_options['namespace_delimiter'];
-        
-        $id = join($delimiter, $namespaces);
-        
-        return $id;
-    }
-    
-    /**
-     * 
-     *
-     * @return array IDs associated with current namespace
-     */
-    public function getTrackedIds()
-    {
-        $ids = $this->load( $this->getNamespacedTrackingId() )
-            ?: array();
-        
-        return $ids;
-    }
-    
-    /**
-     * Save some string datas into a cache record
-     *
-     * Note : $data is always "string" (serialization is done by the
-     * core not by the backend)
-     *
-     * @param  string $data             Datas to cache
-     * @param  string $id               Cache id
-     * @param  array  $tags             Array of strings, the cache record will be tagged by each string entry
-     * @param  int    $specificLifetime If != false, set a specific lifetime for this cache record (null => infinite lifetime)
-     * @return boolean True if no problem
-     */
-    public function save($data, $id, $tags = array(), $specificLifetime = false)
-    {
-        $this->_trackId($id);
-        
-        return parent::save($data, $id, $tags, $specificLifetime);
-    }
-    
-    /**
      * Cleans only the current namespace, by default
      *
      * Available modes are :
@@ -119,8 +55,77 @@ class Zend_Cache_Backend_Memcached_Namespace extends Zend_Cache_Backend_Memcache
                 parent::remove($id);
             }
             
-            parent::remove($this->getNamespacedTrackingId());
+            parent::remove($this->getNamespacedId( $this->_trackingId) );
         }
+    }
+    
+    /**
+     * @var string ID
+     * @return string Namespaced ID
+     */
+    public function getNamespacedId($id)
+    {
+        // Allow for a string or array of namespaces
+        $namespaces = (Array) $this->_options['namespace'];
+        
+        // Append the specified ID
+        $namespaces[] = $id;
+        
+        $delimiter = $this->_options['namespace_delimiter'];
+        
+        $id = join($delimiter, $namespaces);
+        
+        return $id;
+    }
+    
+    /**
+     * 
+     *
+     * @return array IDs associated with current namespace
+     */
+    public function getTrackedIds()
+    {
+        $ids = parent::load( $this->getNamespacedId( $this->_trackingId ) )
+            ?: array();
+        
+        return $ids;
+    }
+    
+    /**
+     * Test if a cache is available for the given id and (if yes) return it (false else)
+     *
+     * @param  string  $id                     Cache id
+     * @param  boolean $doNotTestCacheValidity If set to true, the cache validity won't be tested
+     * @return string|false cached datas
+     */
+    public function load($id, $doNotTestCacheValidity = false)
+    {
+        return parent::load( $this->getNamespacedId( $id ), $doNotTestCacheValidity);
+    }
+    
+    /**
+     * Save some string datas into a cache record
+     *
+     * Note : $data is always "string" (serialization is done by the
+     * core not by the backend)
+     *
+     * @param  string $data             Datas to cache
+     * @param  string $id               Cache id
+     * @param  array  $tags             Array of strings, the cache record will be tagged by each string entry
+     * @param  int    $specificLifetime If != false, set a specific lifetime for this cache record (null => infinite lifetime)
+     * @return boolean True if no problem
+     */
+    public function save($data, $id, $tags = array(), $specificLifetime = false)
+    {
+        $id = $this->getNamespacedId($id);
+        $trackingId = $this->getNamespacedId($this->_trackingId);
+        
+        $ids = parent::load($trackingId) ?: array();
+        $ids[] = $id;
+        
+        parent::save($ids, $trackingId);
+        
+        return parent::save($data, $id, $tags, $specificLifetime);
     }
     
 }

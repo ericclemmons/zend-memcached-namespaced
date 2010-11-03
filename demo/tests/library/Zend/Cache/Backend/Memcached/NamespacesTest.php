@@ -14,12 +14,14 @@ class Zend_Cache_Backend_Memcached_NamespaceTest extends PHPUnit_Framework_TestC
         
         // MD5 of the $cache->findAll() call
         $this->md5 = '8ec867c5280f8fdfbbdd1f22933d7492';
+        $this->namespacedMd5 = 'posts::8ec867c5280f8fdfbbdd1f22933d7492';
     }
     
     public function testMemcached()
     {
         // Result should not be cached
         $this->assertFalse( $this->backend->load( $this->md5 ) );
+        $this->assertEmpty( $this->backend->getTrackedIds() );
         
         $this->cache->findAll();
         
@@ -35,12 +37,12 @@ class Zend_Cache_Backend_Memcached_NamespaceTest extends PHPUnit_Framework_TestC
         
         // Tracked IDs should contain only single entry
         $this->cache->findAll();
-        $this->assertContains( $this->md5, $this->backend->getTrackedIds() );
+        $this->assertContains( $this->namespacedMd5, $this->backend->getTrackedIds() );
         $this->assertEquals( 1, count($this->backend->getTrackedIds()) );
         
         // Subsequent calls should still contain only that single entry
         $this->cache->findAll();
-        $this->assertContains( $this->md5, $this->backend->getTrackedIds() );
+        $this->assertContains( $this->namespacedMd5, $this->backend->getTrackedIds() );
         $this->assertEquals( 1, count($this->backend->getTrackedIds()) );
     }
     
